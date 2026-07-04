@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -11,8 +12,10 @@ import androidx.compose.ui.unit.Dp
 import com.farmanimaltimer.model.Animal
 
 /**
- * Circular reveal: muted animal underneath, colorful animal clipped to a
- * clockwise pie sweep proportional to [revealFraction] (0f..1f).
+ * Circular reveal. The full-color animal is drawn inside a circle, then a SOLID,
+ * fully opaque cover hides it completely. As [revealFraction] grows 0f..1f, a
+ * clockwise pie wedge of that cover is removed (starting at 12 o'clock),
+ * uncovering the animal beneath. At 1f the animal is fully revealed.
  */
 @Composable
 fun PieReveal(
@@ -22,39 +25,41 @@ fun PieReveal(
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier.size(diameter)) {
-        // Backdrop circle so the art sits on a clean field.
-        drawCircle(color = Color(0xFFEFF6F1))
+        val w = size.width
+        val h = size.height
+        val circle = Path().apply { addOval(Rect(0f, 0f, w, h)) }
 
-        // Muted (not-yet-revealed) animal.
-        drawAnimal(animal, colorful = false)
-
-        val frac = revealFraction.coerceIn(0f, 1f)
-        if (frac <= 0f) return@Canvas
-
-        if (frac >= 1f) {
+        clipPath(circle) {
+            // Opaque field + full-color animal underneath the cover.
+            drawRect(color = Color(0xFFFFFFFF))
             drawAnimal(animal, colorful = true)
-            return@Canvas
-        }
 
-        // Pie wedge path starting at 12 o'clock (-90°), sweeping clockwise.
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        val radius = size.width // large enough to cover the whole canvas
-        val path = Path().apply {
-            moveTo(cx, cy)
-            arcTo(
-                rect = androidx.compose.ui.geometry.Rect(
-                    left = cx - radius, top = cy - radius,
-                    right = cx + radius, bottom = cy + radius
-                ),
-                startAngleDegrees = -90f,
-                sweepAngleDegrees = 360f * frac,
-                forceMoveTo = false
-            )
-            close()
-        }
-        clipPath(path) {
-            drawAnimal(animal, colorful = true)
+            val frac = revealFraction.coerceIn(0f, 1f)
+            if (frac >= 1f) return@clipPath
+
+            val cover = Color(0xFF7EC8A0) // solid, fully opaque cover
+            if (frac <= 0f) {
+                drawRect(color = cover) // entire animal hidden
+                return@clipPath
+            }
+
+            // Cover the still-hidden wedge: from where the reveal ends, sweeping the remainder.
+            val cx = w / 2f
+            val cy = h / 2f
+            val radius = w // oversize so the wedge fully spans the circle
+            val hiddenWedge = Path().apply {
+                moveTo(cx, cy)
+                arcTo(
+                    rect = Rect(cx - radius, cy - radius, cx + radius, cy + radius),
+                    startAngleDegrees = -90f + 360f * frac,
+                    sweepAngleDegrees = 360f * (1f - frac),
+                    forceMoveTo = false
+                )
+                close()
+            }
+            clipPath(hiddenWedge) {
+                drawRect(color = cover)
+            }
         }
     }
 }

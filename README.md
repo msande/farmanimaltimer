@@ -34,9 +34,26 @@ gradle :app:assembleDebug
 In Android Studio: **Open** this folder, wait for Gradle sync, then Run on an
 emulator or device (minSdk 26 / Android 8.0+).
 
+## Adding real animal sounds
+
+The app plays a real recording if one exists, and otherwise falls back to a
+synthesized tone — so it always makes noise, and your recordings take over as soon
+as you add them (no code changes needed).
+
+To add your own (e.g. you saying "moo"):
+
+1. Record six short clips (a couple of seconds each).
+2. Name them exactly, all lowercase: `cow`, `pig`, `chicken`, `sheep`, `horse`, `duck`.
+   Supported formats: `.ogg` (recommended), `.mp3`, or `.wav`.
+3. Put them in `app/src/main/res/raw/` (create the `raw` folder if it doesn't exist).
+   So: `app/src/main/res/raw/cow.ogg`, `.../pig.ogg`, etc.
+4. Commit and push — the cloud build will bundle them.
+
+Resource filenames must be lowercase letters/digits/underscores only (no spaces,
+capitals, or dashes), or the Android build will reject them.
+
 ## Notes
 
-- Animal sounds are short synthesized tone patterns (via `ToneGenerator`) standing in
-  for real recordings. To use real audio, drop files in `res/raw/` and swap the tone
-  logic in `sound/AnimalAlert.kt`.
+- The countdown hides the chosen animal behind a solid opaque circle; a clockwise pie
+  wedge uncovers it as time elapses, fully revealed at zero.
 - The design spec and implementation plan live under `docs/superpowers/`.
