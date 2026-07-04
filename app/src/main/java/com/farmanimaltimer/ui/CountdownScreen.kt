@@ -67,9 +67,10 @@ fun CountdownScreen(
                 shape = RoundedCornerShape(28.dp),
             ) { Text("Stop", fontSize = 20.sp) }
         } else {
+            val stepLabel = com.farmanimaltimer.logic.IncrementCalculator.stepLabel(state.remainingSeconds)
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedButton(onClick = onDecrement) { Text("− time", fontSize = 16.sp) }
-                OutlinedButton(onClick = onIncrement) { Text("+ time", fontSize = 16.sp) }
+                OutlinedButton(onClick = onDecrement) { Text("− $stepLabel", fontSize = 16.sp) }
+                OutlinedButton(onClick = onIncrement) { Text("+ $stepLabel", fontSize = 16.sp) }
             }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

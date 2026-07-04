@@ -87,9 +87,10 @@ fun SetupScreen(
 
         Spacer(Modifier.height(20.dp))
 
+        val stepLabel = com.farmanimaltimer.logic.IncrementCalculator.stepLabel(setup.totalSeconds)
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedButton(onClick = onDecrement) { Text("− time", fontSize = 18.sp) }
-            OutlinedButton(onClick = onIncrement) { Text("+ time", fontSize = 18.sp) }
+            OutlinedButton(onClick = onDecrement) { Text("− $stepLabel", fontSize = 18.sp) }
+            OutlinedButton(onClick = onIncrement) { Text("+ $stepLabel", fontSize = 18.sp) }
         }
 
         Spacer(Modifier.height(20.dp))
