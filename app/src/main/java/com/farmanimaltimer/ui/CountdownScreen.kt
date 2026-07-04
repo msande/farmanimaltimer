@@ -1,6 +1,8 @@
 package com.farmanimaltimer.ui
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -27,6 +29,7 @@ fun CountdownScreen(
 ) {
     val animatedFraction by animateFloatAsState(
         targetValue = state.revealFraction,
+        animationSpec = tween(durationMillis = 250, easing = LinearEasing),
         label = "reveal",
     )
     val done = state.phase == TimerPhase.DONE

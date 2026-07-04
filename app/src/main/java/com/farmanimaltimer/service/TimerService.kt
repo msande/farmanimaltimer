@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
@@ -65,23 +66,34 @@ class TimerService : Service() {
         val total = TimeMath.clampSeconds(totalSeconds)
         endElapsedMs = SystemClock.elapsedRealtime() + total * 1000
         _state.value = TimerUiState(TimerPhase.RUNNING, animal, total, total)
-        startForeground(NOTIF_ID, buildNotification(_state.value))
+        goForeground()
         launchTicker()
     }
 
-    /** Adjust total & remaining by a new remaining value while running/paused. */
+    /** Adjust remaining time (up or down) while running/paused. */
     private fun adjustTo(newRemaining: Long) {
         val s = _state.value
         val clamped = TimeMath.clampSeconds(newRemaining)
-        // Keep original totalSeconds as the max of old total and new remaining so
-        // the reveal fraction stays continuous and never negative.
-        val newTotal = maxOf(s.totalSeconds, clamped)
+        // Keep the already-revealed fraction continuous across the adjust: choose a
+        // new total so that (revealed = 1 - remaining/total) is unchanged at the new
+        // remaining value. Prevents the pie from jumping on + or - taps.
+        val curRemaining = currentRemaining()
+        val fraction = if (s.totalSeconds > 0L)
+            (1f - curRemaining.toFloat() / s.totalSeconds.toFloat()).coerceIn(0f, 1f)
+        else 0f
+        val newTotal = if (fraction < 0.999f)
+            (clamped / (1f - fraction)).toLong().coerceAtLeast(clamped)
+        else
+            maxOf(s.totalSeconds, clamped)
         if (s.phase == TimerPhase.RUNNING) {
             endElapsedMs = SystemClock.elapsedRealtime() + clamped * 1000
         } else {
             pausedRemainingSec = clamped
         }
-        _state.value = s.copy(totalSeconds = newTotal, remainingSeconds = clamped)
+        _state.value = s.copy(
+            totalSeconds = TimeMath.clampSeconds(newTotal),
+            remainingSeconds = clamped,
+        )
         updateNotification()
     }
 
@@ -181,6 +193,16 @@ class TimerService : Service() {
         nm.notify(NOTIF_ID, buildNotification(_state.value))
     }
 
+    /** Promote to a foreground service, passing the specialUse type on Android 14+. */
+    private fun goForeground() {
+        val notif = buildNotification(_state.value)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIF_ID, notif)
+        }
+    }
+
     private fun stopForegroundCompat() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -226,8 +248,14 @@ class TimerService : Service() {
 
         private inline fun send(context: Context, action: String, block: Intent.() -> Unit) {
             val i = Intent(context, TimerService::class.java).setAction(action).apply(block)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(i)
-            else context.startService(i)
+            // Only ACTION_START promotes to foreground (and must call startForeground
+            // within ~5s, which startCountdown does). Other actions target an
+            // already-running service, so plain startService avoids the FGS timeout.
+            if (action == ACTION_START && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(i)
+            } else {
+                context.startService(i)
+            }
         }
     }
 }

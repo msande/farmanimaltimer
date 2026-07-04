@@ -6,7 +6,6 @@ import com.farmanimaltimer.data.Prefs
 import com.farmanimaltimer.logic.IncrementCalculator
 import com.farmanimaltimer.logic.TimeMath
 import com.farmanimaltimer.model.Animal
-import com.farmanimaltimer.model.TimerPhase
 import com.farmanimaltimer.model.TimerUiState
 import com.farmanimaltimer.service.TimerService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +91,4 @@ class TimerViewModel(app: Application) : AndroidViewModel(app) {
     fun resume() = TimerService.resume(getApplication())
     fun cancel() = TimerService.cancel(getApplication())
     fun stopAlert() = TimerService.stopAlert(getApplication())
-
-    fun isActive(state: TimerUiState): Boolean =
-        state.phase == TimerPhase.RUNNING || state.phase == TimerPhase.PAUSED || state.phase == TimerPhase.DONE
 }
