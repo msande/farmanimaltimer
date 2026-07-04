@@ -84,5 +84,8 @@ fun DrawScope.drawAnimal(animal: Animal, colorful: Boolean) {
             dot(0.40f, 0.40f, 0.022f, c(Color(0xFF2A2A2A)))           // eye
             ellipse(0.62f, 0.60f, 0.14f, 0.12f, c(Color(0xFFEEC63C)))  // wing
         }
+        Animal.AVA -> {
+            // Rendered from a photo (res/drawable/ava) by the composables, not vectors.
+        }
     }
 }

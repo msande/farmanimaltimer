@@ -6,16 +6,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import com.farmanimaltimer.R
 import com.farmanimaltimer.model.Animal
 
 /**
- * Circular reveal. The full-color animal is drawn inside a circle, then a SOLID,
- * fully opaque cover hides it completely. As [revealFraction] grows 0f..1f, a
- * clockwise pie wedge of that cover is removed (starting at 12 o'clock),
- * uncovering the animal beneath. At 1f the animal is fully revealed.
+ * Circular reveal. The full animal (vector art, or a photo for [Animal.hasPhoto]
+ * entries like Ava) is drawn inside a circle, then a SOLID, fully opaque cover hides
+ * it completely. As [revealFraction] grows 0f..1f, a clockwise pie wedge of that
+ * cover is removed (starting at 12 o'clock), uncovering the animal beneath. At 1f
+ * the animal is fully revealed.
  */
 @Composable
 fun PieReveal(
@@ -24,15 +30,29 @@ fun PieReveal(
     diameter: Dp,
     modifier: Modifier = Modifier,
 ) {
+    val photo: ImageBitmap? = if (animal.hasPhoto) imageResource(photoRes(animal)) else null
+
     Canvas(modifier = modifier.size(diameter)) {
         val w = size.width
         val h = size.height
         val circle = Path().apply { addOval(Rect(0f, 0f, w, h)) }
 
         clipPath(circle) {
-            // Opaque field + full-color animal underneath the cover.
+            // Opaque field + full animal underneath the cover.
             drawRect(color = Color(0xFFFFFFFF))
-            drawAnimal(animal, colorful = true)
+            if (photo != null) {
+                // Center-crop the photo to fill the circle.
+                val side = minOf(photo.width, photo.height)
+                drawImage(
+                    image = photo,
+                    srcOffset = IntOffset((photo.width - side) / 2, (photo.height - side) / 2),
+                    srcSize = IntSize(side, side),
+                    dstOffset = IntOffset.Zero,
+                    dstSize = IntSize(w.toInt(), h.toInt()),
+                )
+            } else {
+                drawAnimal(animal, colorful = true)
+            }
 
             val frac = revealFraction.coerceIn(0f, 1f)
             if (frac >= 1f) return@clipPath
@@ -62,4 +82,10 @@ fun PieReveal(
             }
         }
     }
+}
+
+/** Drawable resource for animals rendered as a photo. */
+private fun photoRes(animal: Animal): Int = when (animal) {
+    Animal.AVA -> R.drawable.ava
+    else -> R.drawable.ava
 }

@@ -56,8 +56,17 @@ fun SetupScreen(
                         .clickable { onSelectAnimal(animal) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    androidx.compose.foundation.Canvas(Modifier.size(56.dp)) {
-                        drawAnimal(animal, colorful = true)
+                    if (animal.hasPhoto) {
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(com.farmanimaltimer.R.drawable.ava),
+                            contentDescription = animal.displayName,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.size(56.dp).clip(CircleShape),
+                        )
+                    } else {
+                        androidx.compose.foundation.Canvas(Modifier.size(56.dp)) {
+                            drawAnimal(animal, colorful = true)
+                        }
                     }
                 }
             }
