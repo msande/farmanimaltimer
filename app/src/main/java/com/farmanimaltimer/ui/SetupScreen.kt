@@ -28,6 +28,7 @@ fun SetupScreen(
     onSetFields: (Int, Int, Int) -> Unit,
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
+    onToggleVibrate: (Boolean) -> Unit,
     onStart: () -> Unit,
 ) {
     Column(
@@ -91,7 +92,17 @@ fun SetupScreen(
             OutlinedButton(onClick = onIncrement) { Text("+ time", fontSize = 18.sp) }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(20.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Vibrate when time's up", fontSize = 16.sp)
+            Switch(checked = setup.vibrate, onCheckedChange = onToggleVibrate)
+        }
+
+        Spacer(Modifier.height(20.dp))
 
         Button(
             onClick = onStart,

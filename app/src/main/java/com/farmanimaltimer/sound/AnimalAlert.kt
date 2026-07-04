@@ -34,16 +34,18 @@ class AnimalAlert(context: Context) {
     private var tone: ToneGenerator? = null
     private var player: MediaPlayer? = null
 
-    fun start(animal: Animal) {
+    fun start(animal: Animal, vibrate: Boolean = true) {
         stop()
-        val vibrator = obtainVibrator()
+        maxOutAlarmVolume()
+        val vibrator = if (vibrate) obtainVibrator() else null
         val rawId = appContext.resources.getIdentifier(
             animal.name.lowercase(), "raw", appContext.packageName
         )
         if (rawId != 0) {
             playRecording(rawId)
         }
-        // Vibration always loops; tones only when there is no recording.
+        // Sound loops via MediaPlayer (recording) or ToneGenerator (fallback);
+        // vibration loops alongside only when enabled.
         loopJob = scope.launch {
             val gen = if (rawId == 0) ToneGenerator(AudioManager.STREAM_ALARM, 100).also { tone = it } else null
             while (isActive) {
@@ -54,9 +56,21 @@ class AnimalAlert(context: Context) {
                         delay(durMs)
                     }
                 }
-                vibrateOnce(vibrator)
+                if (vibrator != null) vibrateOnce(vibrator)
                 delay(if (gen != null) 400 else 1000)
             }
+        }
+    }
+
+    /** Raise the alarm stream to its maximum so the alert is as loud as possible. */
+    private fun maxOutAlarmVolume() {
+        val am = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+        runCatching {
+            am.setStreamVolume(
+                AudioManager.STREAM_ALARM,
+                am.getStreamMaxVolume(AudioManager.STREAM_ALARM),
+                0
+            )
         }
     }
 
@@ -80,6 +94,7 @@ class AnimalAlert(context: Context) {
             val afd = appContext.resources.openRawResourceFd(rawId)
             afd.use { setDataSource(it.fileDescriptor, it.startOffset, it.length) }
             isLooping = true
+            setVolume(1f, 1f)
             setOnPreparedListener { it.start() }
             prepareAsync()
         }

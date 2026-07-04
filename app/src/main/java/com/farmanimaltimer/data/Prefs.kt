@@ -14,8 +14,13 @@ class Prefs(context: Context) {
         get() = sp.getLong(KEY_DURATION, 0L)
         set(value) { sp.edit().putLong(KEY_DURATION, value).apply() }
 
+    var vibrateEnabled: Boolean
+        get() = sp.getBoolean(KEY_VIBRATE, true)
+        set(value) { sp.edit().putBoolean(KEY_VIBRATE, value).apply() }
+
     private companion object {
         const val KEY_ANIMAL = "last_animal"
         const val KEY_DURATION = "last_duration"
+        const val KEY_VIBRATE = "vibrate_enabled"
     }
 }

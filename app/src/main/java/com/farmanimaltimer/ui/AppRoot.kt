@@ -24,6 +24,7 @@ fun AppRoot(vm: TimerViewModel = viewModel()) {
                     onSetFields = vm::setFields,
                     onIncrement = vm::incrementSetup,
                     onDecrement = vm::decrementSetup,
+                    onToggleVibrate = vm::setVibrate,
                     onStart = vm::start,
                 )
             } else {

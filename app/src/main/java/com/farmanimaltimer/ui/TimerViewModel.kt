@@ -18,6 +18,7 @@ data class SetupState(
     val hours: Int = 0,
     val minutes: Int = 5,
     val seconds: Int = 0,
+    val vibrate: Boolean = true,
 ) {
     val totalSeconds: Long get() = TimeMath.fieldsToSeconds(hours, minutes, seconds)
 }
@@ -27,7 +28,7 @@ class TimerViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = Prefs(app)
 
     private val _setup = MutableStateFlow(
-        SetupState(animal = prefs.lastAnimal).let { s ->
+        SetupState(animal = prefs.lastAnimal, vibrate = prefs.vibrateEnabled).let { s ->
             val saved = prefs.lastDurationSeconds
             if (saved > 0) {
                 val h = (saved / 3600).toInt().coerceAtMost(99)
@@ -45,6 +46,8 @@ class TimerViewModel(app: Application) : AndroidViewModel(app) {
     // ---- Setup editing ----
 
     fun selectAnimal(animal: Animal) { _setup.value = _setup.value.copy(animal = animal) }
+
+    fun setVibrate(enabled: Boolean) { _setup.value = _setup.value.copy(vibrate = enabled) }
 
     fun setFields(h: Int, m: Int, s: Int) {
         _setup.value = _setup.value.copy(
@@ -74,7 +77,8 @@ class TimerViewModel(app: Application) : AndroidViewModel(app) {
         if (total <= 0L) return
         prefs.lastAnimal = s.animal
         prefs.lastDurationSeconds = total
-        TimerService.start(getApplication(), s.animal, total)
+        prefs.vibrateEnabled = s.vibrate
+        TimerService.start(getApplication(), s.animal, total, s.vibrate)
     }
 
     fun incrementRunning() {

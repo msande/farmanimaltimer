@@ -36,6 +36,7 @@ class TimerService : Service() {
     private var ticker: Job? = null
     private var endElapsedMs: Long = 0L
     private var pausedRemainingSec: Long = 0L
+    private var vibrateOnDone: Boolean = true
     private lateinit var alert: AnimalAlert
 
     override fun onCreate() {
@@ -51,6 +52,7 @@ class TimerService : Service() {
             ACTION_START -> {
                 val animal = Animal.fromNameOrDefault(intent.getStringExtra(EXTRA_ANIMAL))
                 val total = intent.getLongExtra(EXTRA_TOTAL, 0L).coerceAtLeast(0L)
+                vibrateOnDone = intent.getBooleanExtra(EXTRA_VIBRATE, true)
                 startCountdown(animal, total)
             }
             ACTION_ADJUST -> adjustTo(intent.getLongExtra(EXTRA_TOTAL, currentRemaining()))
@@ -149,14 +151,17 @@ class TimerService : Service() {
     private fun onFinished() {
         val s = _state.value
         _state.value = s.copy(phase = TimerPhase.DONE, remainingSeconds = 0L)
-        alert.start(s.animal)
+        alert.start(s.animal, vibrateOnDone)
         updateNotification()
     }
 
     private fun currentRemaining(): Long {
         val s = _state.value
-        return if (s.phase == TimerPhase.PAUSED) pausedRemainingSec
-        else ((endElapsedMs - SystemClock.elapsedRealtime()) / 1000).coerceAtLeast(0L)
+        if (s.phase == TimerPhase.PAUSED) return pausedRemainingSec
+        // Ceiling: shows the full second until it has actually elapsed, so a 5s timer
+        // starts at 5 (fully covered) instead of dropping to 4 within the first tick.
+        val ms = (endElapsedMs - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+        return (ms + 999) / 1000
     }
 
     // ---- Notification ----
@@ -231,11 +236,13 @@ class TimerService : Service() {
         const val ACTION_STOP_ALERT = "stop_alert"
         const val EXTRA_ANIMAL = "animal"
         const val EXTRA_TOTAL = "total"
+        const val EXTRA_VIBRATE = "vibrate"
 
-        fun start(context: Context, animal: Animal, totalSeconds: Long) =
+        fun start(context: Context, animal: Animal, totalSeconds: Long, vibrate: Boolean) =
             send(context, ACTION_START) {
                 putExtra(EXTRA_ANIMAL, animal.name)
                 putExtra(EXTRA_TOTAL, totalSeconds)
+                putExtra(EXTRA_VIBRATE, vibrate)
             }
 
         fun adjust(context: Context, newRemaining: Long) =
