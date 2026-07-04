@@ -30,7 +30,7 @@ fun PieReveal(
     diameter: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val photo: ImageBitmap? = if (animal.hasPhoto) imageResource(photoRes(animal)) else null
+    val photo: ImageBitmap? = if (animal.hasPhoto) ImageBitmap.imageResource(photoRes(animal)) else null
 
     Canvas(modifier = modifier.size(diameter)) {
         val w = size.width

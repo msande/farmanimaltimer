@@ -93,6 +93,8 @@ class AnimalAlert(context: Context) {
         Animal.SHEEP -> listOf(ToneGenerator.TONE_DTMF_3 to 400L, 0 to 250L)
         Animal.HORSE -> listOf(ToneGenerator.TONE_DTMF_2 to 120L, ToneGenerator.TONE_DTMF_4 to 300L, 0 to 200L)
         Animal.DUCK -> listOf(ToneGenerator.TONE_DTMF_6 to 90L, 0 to 60L, ToneGenerator.TONE_DTMF_6 to 90L, 0 to 250L)
+        // Ava always ships with a recording, so this fallback tone is never reached.
+        Animal.AVA -> listOf(ToneGenerator.TONE_DTMF_0 to 200L, 0 to 200L)
     }
 
     private fun obtainVibrator(): Vibrator? =
